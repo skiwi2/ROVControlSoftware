@@ -8,5 +8,9 @@ repositories {
 }
 
 dependencies {
-    testCompile group: 'junit', name: 'junit', version: '4.11'
+    compile 'com.github.sarxos:webcam-capture:0.3.10'
+    compile 'com.github.sarxos:webcam-capture-driver-ipcam:0.3.10'
+    compile 'org.slf4j:slf4j-api:1.7.12'
+    compile 'org.slf4j:slf4j-simple:1.7.12'
+    testCompile 'junit:junit:4.11'
 }
