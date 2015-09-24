@@ -6,10 +6,9 @@
 <?import java.lang.*?>
 <?import javafx.scene.layout.*?>
 
-
 <AnchorPane maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="800.0" prefWidth="800.0" xmlns="http://javafx.com/javafx/8" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.skiwi.rovcontrolsoftware.controllers.MainWindowController">
    <children>
-      <SwingNode fx:id="swingNode" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="200.0" AnchorPane.topAnchor="50.0" />
+      <SwingNode fx:id="swingNode" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="200.0" AnchorPane.topAnchor="100.0" />
       <Label layoutX="640.0" layoutY="25.0" text="X angle: " AnchorPane.leftAnchor="640.0" AnchorPane.topAnchor="25.0">
          <font>
             <Font size="24.0" />
@@ -30,6 +29,8 @@
             <Font size="24.0" />
          </font>
       </Label>
-      <TextField fx:id="urlTextField" layoutX="14.0" layoutY="13.0" AnchorPane.leftAnchor="25.0" AnchorPane.rightAnchor="225.0" AnchorPane.topAnchor="13.0" />
+      <TextField fx:id="cameraUrlTextField" layoutX="14.0" layoutY="13.0" AnchorPane.leftAnchor="25.0" AnchorPane.rightAnchor="225.0" AnchorPane.topAnchor="13.0" />
+      <TextField fx:id="socketHostTextField" layoutX="25.0" layoutY="48.0" AnchorPane.leftAnchor="25.0" AnchorPane.rightAnchor="325.0" AnchorPane.topAnchor="63.0" />
+      <TextField fx:id="socketPortTextField" layoutX="426.0" layoutY="63.0" AnchorPane.leftAnchor="500.0" AnchorPane.rightAnchor="225.0" AnchorPane.topAnchor="63.0" />
    </children>
 </AnchorPane>
