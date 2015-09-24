@@ -1,10 +1,8 @@
 package com.skiwi.rovcontrolsoftware;
 
 import com.github.sarxos.webcam.Webcam;
-import com.github.sarxos.webcam.ds.ipcam.IpCamDevice;
-import com.github.sarxos.webcam.ds.ipcam.IpCamDeviceRegistry;
 import com.github.sarxos.webcam.ds.ipcam.IpCamDriver;
-import com.github.sarxos.webcam.ds.ipcam.IpCamMode;
+import com.skiwi.rovcontrolsoftware.controllers.MainWindowController;
 import javafx.application.Application;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
@@ -22,14 +20,16 @@ public class ROVControlSoftwareApplication extends Application {
     }
 
     public static void main(String[] args) throws MalformedURLException {
-//        IpCamDeviceRegistry.register(new IpCamDevice("Test", "http://195.235.198.107:3346/axis-cgi/mjpg/video.cgi", IpCamMode.PUSH));
         launch(args);
     }
 
     @Override
     public void start(Stage primaryStage) throws Exception {
-        Parent root = FXMLLoader.load(getClass().getResource("MainWindow.fxml"));
+        FXMLLoader fxmlLoader = new FXMLLoader(getClass().getResource("MainWindow.fxml"));
+        Parent root = fxmlLoader.load();
         Scene scene = new Scene(root);
+        MainWindowController mainWindowController = fxmlLoader.getController();
+        mainWindowController.setScene(scene);
 
         primaryStage.setTitle("ROV Control Application");
         primaryStage.setScene(scene);
