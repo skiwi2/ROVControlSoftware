@@ -74,8 +74,8 @@ public class MainWindowController implements Initializable {
             }
         });
 
-        socketHostTextField.textProperty().addListener((observableValue, oldValue, newValue) -> Platform.runLater(() -> updateSocketConnection()));
-        socketPortTextField.textProperty().addListener((observableValue, oldValue, newValue) -> Platform.runLater(() -> updateSocketConnection()));
+        socketHostTextField.textProperty().addListener((observableValue, oldValue, newValue) -> Platform.runLater(this::updateSocketConnection));
+        socketPortTextField.textProperty().addListener((observableValue, oldValue, newValue) -> Platform.runLater(this::updateSocketConnection));
 
         cameraUrlTextField.setText("http://195.235.198.107:3346/axis-cgi/mjpg/video.cgi");
 //        cameraUrlTextField.setText("http://192.168.1.1:8080/?action=stream");
