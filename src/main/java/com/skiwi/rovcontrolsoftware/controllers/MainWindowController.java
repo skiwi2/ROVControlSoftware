@@ -78,7 +78,9 @@ public class MainWindowController implements Initializable {
         socketPortTextField.textProperty().addListener((observableValue, oldValue, newValue) -> Platform.runLater(() -> updateSocketConnection()));
 
         cameraUrlTextField.setText("http://195.235.198.107:3346/axis-cgi/mjpg/video.cgi");
+//        cameraUrlTextField.setText("http://192.168.1.1:8080/?action=stream");
         socketHostTextField.setText("127.0.0.1");
+//        socketHostTextField.setText("192.168.1.1");
         socketPortTextField.setText("2001");
         setXAngle(90);
         setYAngle(90);
