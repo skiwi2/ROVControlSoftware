@@ -37,6 +37,8 @@ public class MainWindowController implements Initializable {
     private static final int CONTROLLER_DELTA = 100;
     private static final int KEYBOARD_DELTA = 5;
 
+    private static final float CONTROLLER_DEADZONE = 0.25f;
+
     @FXML
     private SwingNode swingNode;
 
@@ -134,8 +136,23 @@ public class MainWindowController implements Initializable {
                     controller.poll();
                     float rightThumbstickXValue = rightThumbstickX.getPollData();
                     float rightThumbstickYValue = rightThumbstickY.getPollData();
-                    setXAngle(clamp(xAngle + (rightThumbstickXValue * CONTROLLER_DELTA / POLL_RATE), 0f, 180f));
-                    setYAngle(clamp(yAngle + (-rightThumbstickYValue * CONTROLLER_DELTA / POLL_RATE), 0f, 180f));
+
+                    float magnitude = (float)Math.sqrt(Math.pow(rightThumbstickXValue, 2) + Math.pow(rightThumbstickYValue, 2));
+                    if (magnitude < CONTROLLER_DEADZONE) {
+                        //do nothing
+                    }
+                    else {
+                        //normalize
+                        rightThumbstickXValue /= magnitude;
+                        rightThumbstickYValue /= magnitude;
+
+                        //scaling
+                        rightThumbstickXValue *= ((magnitude - CONTROLLER_DEADZONE) / (1f - CONTROLLER_DEADZONE));
+                        rightThumbstickYValue *= ((magnitude - CONTROLLER_DEADZONE) / (1f - CONTROLLER_DEADZONE));
+
+                        setXAngle(clamp(xAngle + (rightThumbstickXValue * CONTROLLER_DELTA / POLL_RATE), 0f, 180f));
+                        setYAngle(clamp(yAngle + (-rightThumbstickYValue * CONTROLLER_DELTA / POLL_RATE), 0f, 180f));
+                    }
                 }
             };
             timer.scheduleAtFixedRate(timerTask, 0, 1000 / POLL_RATE);
