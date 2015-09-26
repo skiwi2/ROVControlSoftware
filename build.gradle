@@ -47,13 +47,3 @@ distTar.dependsOn unpackNatives
 applicationDistribution.from(new File("$buildDir/natives")) {
     into "natives"
 }
-
-//distributions {
-//    main {
-//        contents {
-//            file("$buildDir/natives") {
-//                into "natives"
-//            }
-//        }
-//    }
-//}

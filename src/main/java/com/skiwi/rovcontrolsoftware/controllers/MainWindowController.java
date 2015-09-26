@@ -63,6 +63,9 @@ public class MainWindowController implements Initializable {
     @FXML
     private Label socketStatusLabel;
 
+    @FXML
+    private Label gamepadStatusLabel;
+
     private Scene scene;
 
     private float xAngle;
@@ -123,6 +126,7 @@ public class MainWindowController implements Initializable {
                 .filter(controller -> controller.getType().equals(Controller.Type.GAMEPAD))
                 .collect(Collectors.toList());
         if (!gamepads.isEmpty()) {
+            setGamepadStatus(Status.ONLINE);
             Controller controller = gamepads.get(0);
 
             //Right thumbstick
@@ -156,6 +160,9 @@ public class MainWindowController implements Initializable {
                 }
             };
             timer.scheduleAtFixedRate(timerTask, 0, 1000 / POLL_RATE);
+        }
+        else {
+            setGamepadStatus(Status.OFFLINE);
         }
     }
 
@@ -229,6 +236,21 @@ public class MainWindowController implements Initializable {
                 text = "";
         }
         socketStatusLabel.setText(text);
+    }
+
+    private void setGamepadStatus(Status status) {
+        String text;
+        switch (status) {
+            case ONLINE:
+                text = "Gamepad online";
+                break;
+            case OFFLINE:
+                text = "Gamepad offline";
+                break;
+            default:
+                text = "";
+        }
+        gamepadStatusLabel.setText(text);
     }
 
     private static float clamp(float value, float min, float max) {
