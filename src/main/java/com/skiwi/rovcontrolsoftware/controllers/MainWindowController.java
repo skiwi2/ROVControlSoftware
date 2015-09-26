@@ -1,6 +1,8 @@
 package com.skiwi.rovcontrolsoftware.controllers;
 
 import com.github.sarxos.webcam.Webcam;
+import com.github.sarxos.webcam.WebcamEvent;
+import com.github.sarxos.webcam.WebcamListener;
 import com.github.sarxos.webcam.WebcamPanel;
 import com.github.sarxos.webcam.ds.ipcam.IpCamDevice;
 import com.github.sarxos.webcam.ds.ipcam.IpCamDeviceRegistry;
@@ -50,6 +52,12 @@ public class MainWindowController implements Initializable {
     @FXML
     private Label yAngleLabel;
 
+    @FXML
+    private Label cameraStatusLabel;
+
+    @FXML
+    private Label socketStatusLabel;
+
     private Scene scene;
 
     private int xAngle;
@@ -64,11 +72,32 @@ public class MainWindowController implements Initializable {
     @Override
     public void initialize(URL location, ResourceBundle resources) {
         cameraUrlTextField.textProperty().addListener((observableValue, oldValue, newValue) -> {
-            //TODO unregistering causes a big problem if it is still in use
-            IpCamDeviceRegistry.unregisterAll();
             try {
-                IpCamDeviceRegistry.register(new IpCamDevice("Test " + new Random().nextInt(), cameraUrlTextField.getText(), IpCamMode.PUSH));
-                Platform.runLater(() -> swingNode.setContent(new WebcamPanel(Webcam.getDefault())));
+                IpCamDevice ipCamDevice = IpCamDeviceRegistry.register(new IpCamDevice("Test " + new Random().nextInt(), cameraUrlTextField.getText(), IpCamMode.PUSH));
+                setCameraStatus(ipCamDevice.isOnline() ? Status.ONLINE : Status.OFFLINE);
+                if (ipCamDevice.isOnline()) {
+                    List<Webcam> webcams = Webcam.getWebcams();
+                    Webcam addedWebcam = webcams.get(webcams.size() - 1);
+                    addedWebcam.addWebcamListener(new WebcamListener() {
+                        @Override
+                        public void webcamOpen(WebcamEvent we) {
+                            Platform.runLater(() -> swingNode.setContent(new WebcamPanel(we.getSource())));
+                        }
+
+                        @Override
+                        public void webcamClosed(WebcamEvent we) {
+                        }
+
+                        @Override
+                        public void webcamDisposed(WebcamEvent we) {
+                        }
+
+                        @Override
+                        public void webcamImageObtained(WebcamEvent we) {
+                        }
+                    });
+                    addedWebcam.open(false);
+                }
             } catch (MalformedURLException e) {
                 e.printStackTrace();
             }
@@ -90,9 +119,6 @@ public class MainWindowController implements Initializable {
         String host = socketHostTextField.getText();
         String port = socketPortTextField.getText();
 
-        System.out.println("host = " + host);
-        System.out.println("port = " + port);
-
         try {
             if (commandSocket != null) {
                 commandSocket.close();
@@ -103,8 +129,10 @@ public class MainWindowController implements Initializable {
             inCommandSocket = new BufferedReader(new InputStreamReader(commandSocket.getInputStream()));
 
             bufferedCommands.forEach(outCommandSocket::println);
+
+            setSocketStatus(Status.ONLINE);
         } catch (IOException e) {
-            e.printStackTrace();
+            setSocketStatus(Status.OFFLINE);
         }
     }
 
@@ -127,6 +155,36 @@ public class MainWindowController implements Initializable {
         else {
             outCommandSocket.println(command);
         }
+    }
+
+    private void setCameraStatus(Status status) {
+        String text;
+        switch (status) {
+            case ONLINE:
+                text = "Camera online";
+                break;
+            case OFFLINE:
+                text = "Camera offline";
+                break;
+            default:
+                text = "";
+        }
+        cameraStatusLabel.setText(text);
+    }
+
+    private void setSocketStatus(Status status) {
+        String text;
+        switch (status) {
+            case ONLINE:
+                text = "Socket online";
+                break;
+            case OFFLINE:
+                text = "Socket offline";
+                break;
+            default:
+                text = "";
+        }
+        socketStatusLabel.setText(text);
     }
 
     public void setScene(Scene scene) {
@@ -167,5 +225,10 @@ public class MainWindowController implements Initializable {
                     break;
             }
         });
+    }
+
+    private static enum Status {
+        ONLINE,
+        OFFLINE
     }
 }
