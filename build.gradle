@@ -1,12 +1,15 @@
 plugins {
     id 'java'
     id 'application'
-    id 'com.github.johnrengelman.shadow' version '1.2.2'
     id 'com.stehno.natives' version '0.2.4'
 }
 
 sourceCompatibility = 1.8
 version = '1.0'
+
+mainClassName = 'com.skiwi.rovcontrolsoftware.ROVControlSoftwareApplication'
+
+applicationDefaultJvmArgs = ["-Djava.library.path=../natives/windows"]
 
 repositories {
     mavenCentral()
@@ -24,7 +27,7 @@ dependencies {
 
 jar {
     manifest {
-        attributes 'Main-Class': 'com.skiwi.rovcontrolsoftware.ROVControlSoftwareApplication'
+        attributes 'Main-Class': mainClassName
     }
 }
 
@@ -33,5 +36,24 @@ natives {
 }
 
 run {
-    systemProperty "java.library.path", "natives"
+    systemProperties = [
+        'java.library.path': file("$buildDir/natives/windows")
+    ]
 }
+
+distZip.dependsOn unpackNatives
+distTar.dependsOn unpackNatives
+
+applicationDistribution.from(new File("$buildDir/natives")) {
+    into "natives"
+}
+
+//distributions {
+//    main {
+//        contents {
+//            file("$buildDir/natives") {
+//                into "natives"
+//            }
+//        }
+//    }
+//}
