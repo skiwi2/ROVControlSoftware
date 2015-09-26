@@ -15,6 +15,9 @@ import javafx.scene.Scene;
 import javafx.scene.control.Label;
 import javafx.scene.control.TextField;
 import javafx.scene.input.KeyEvent;
+import net.java.games.input.Component;
+import net.java.games.input.Controller;
+import net.java.games.input.ControllerEnvironment;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -23,16 +26,16 @@ import java.io.PrintWriter;
 import java.net.MalformedURLException;
 import java.net.Socket;
 import java.net.URL;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Random;
-import java.util.ResourceBundle;
+import java.util.*;
+import java.util.stream.Collectors;
 
 /**
  * @author Frank van Heeswijk
  */
 public class MainWindowController implements Initializable {
-    private static final int DELTA = 5;
+    private static final int POLL_RATE = 100;   //amount of times polled per second
+    private static final int CONTROLLER_DELTA = 100;
+    private static final int KEYBOARD_DELTA = 5;
 
     @FXML
     private SwingNode swingNode;
@@ -60,8 +63,8 @@ public class MainWindowController implements Initializable {
 
     private Scene scene;
 
-    private int xAngle;
-    private int yAngle;
+    private float xAngle;
+    private float yAngle;
 
     private Socket commandSocket;
     private PrintWriter outCommandSocket;
@@ -111,8 +114,32 @@ public class MainWindowController implements Initializable {
         socketHostTextField.setText("127.0.0.1");
 //        socketHostTextField.setText("192.168.1.1");
         socketPortTextField.setText("2001");
-        setXAngle(90);
-        setYAngle(90);
+        setXAngle(90f);
+        setYAngle(90f);
+
+        List<Controller> gamepads = Arrays.stream(ControllerEnvironment.getDefaultEnvironment().getControllers())
+                .filter(controller -> controller.getType().equals(Controller.Type.GAMEPAD))
+                .collect(Collectors.toList());
+        if (!gamepads.isEmpty()) {
+            Controller controller = gamepads.get(0);
+
+            //Right thumbstick
+            Component rightThumbstickX = controller.getComponent(Component.Identifier.Axis.RX);
+            Component rightThumbstickY = controller.getComponent(Component.Identifier.Axis.RY);
+
+            Timer timer = new Timer(true);
+            TimerTask timerTask = new TimerTask() {
+                @Override
+                public void run() {
+                    controller.poll();
+                    float rightThumbstickXValue = rightThumbstickX.getPollData();
+                    float rightThumbstickYValue = rightThumbstickY.getPollData();
+                    setXAngle(clamp(xAngle + (rightThumbstickXValue * CONTROLLER_DELTA / POLL_RATE), 0f, 180f));
+                    setYAngle(clamp(yAngle + (-rightThumbstickYValue * CONTROLLER_DELTA / POLL_RATE), 0f, 180f));
+                }
+            };
+            timer.scheduleAtFixedRate(timerTask, 0, 1000 / POLL_RATE);
+        }
     }
 
     private void updateSocketConnection() {
@@ -136,16 +163,16 @@ public class MainWindowController implements Initializable {
         }
     }
 
-    private void setXAngle(int angle) {
+    private void setXAngle(float angle) {
         xAngle = angle;
-        xAngleLabel.setText(String.valueOf(angle));
-        sendCommand("x " + angle);
+        Platform.runLater(() -> xAngleLabel.setText(String.valueOf(Math.round(angle))));
+        sendCommand("x " + Math.round(angle));
     }
 
-    private void setYAngle(int angle) {
+    private void setYAngle(float angle) {
         yAngle = angle;
-        yAngleLabel.setText(String.valueOf(angle));
-        sendCommand("y " + angle);
+        Platform.runLater(() -> yAngleLabel.setText(String.valueOf(Math.round(angle))));
+        sendCommand("y " + Math.round(angle));
     }
 
     private void sendCommand(String command) {
@@ -187,39 +214,37 @@ public class MainWindowController implements Initializable {
         socketStatusLabel.setText(text);
     }
 
+    private static float clamp(float value, float min, float max) {
+        if (value < min) {
+            return min;
+        }
+        if (value > max) {
+            return max;
+        }
+        return value;
+    }
+
     public void setScene(Scene scene) {
         this.scene = scene;
 
         scene.addEventHandler(KeyEvent.KEY_PRESSED, keyEventHandler -> {
-            int newAngle;
+            float newAngle;
             switch (keyEventHandler.getCode()) {
                 case W:
-                    newAngle = yAngle + DELTA;
-                    if (newAngle >= 180) {
-                        newAngle = 180;
-                    }
-                    setYAngle(newAngle);
+                    newAngle = yAngle + KEYBOARD_DELTA;
+                    setYAngle(clamp(newAngle, 0f , 180f));
                     break;
                 case S:
-                    newAngle = yAngle - DELTA;
-                    if (newAngle <= 0) {
-                        newAngle = 0;
-                    }
-                    setYAngle(newAngle);
+                    newAngle = yAngle - KEYBOARD_DELTA;
+                    setYAngle(clamp(newAngle, 0f , 180f));
                     break;
                 case D:
-                    newAngle = xAngle + DELTA;
-                    if (newAngle >= 180) {
-                        newAngle = 180;
-                    }
-                    setXAngle(newAngle);
+                    newAngle = xAngle + KEYBOARD_DELTA;
+                    setXAngle(clamp(newAngle, 0f , 180f));
                     break;
                 case A:
-                    newAngle = xAngle - DELTA;
-                    if (newAngle <= 0) {
-                        newAngle = 0;
-                    }
-                    setXAngle(newAngle);
+                    newAngle = xAngle - KEYBOARD_DELTA;
+                    setXAngle(clamp(newAngle, 0f , 180f));
                     break;
                 default:
                     break;

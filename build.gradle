@@ -1,6 +1,8 @@
 plugins {
     id 'java'
+    id 'application'
     id 'com.github.johnrengelman.shadow' version '1.2.2'
+    id 'com.stehno.natives' version '0.2.4'
 }
 
 sourceCompatibility = 1.8
@@ -15,6 +17,8 @@ dependencies {
     compile 'com.github.sarxos:webcam-capture-driver-ipcam:0.3.10'
     compile 'org.slf4j:slf4j-api:1.7.12'
     compile 'org.slf4j:slf4j-simple:1.7.12'
+    compile 'net.java.jinput:jinput:2.0.6'
+    runtime 'net.java.jinput:jinput-platform:2.0.6'
     testCompile 'junit:junit:4.11'
 }
 
@@ -22,4 +26,12 @@ jar {
     manifest {
         attributes 'Main-Class': 'com.skiwi.rovcontrolsoftware.ROVControlSoftwareApplication'
     }
+}
+
+natives {
+    jars = ['jinput-platform-2.0.6-natives-windows', 'jinput-platform-2.0.6-natives-linux', 'jinput-platform-2.0.6-natives-osx']
+}
+
+run {
+    systemProperty "java.library.path", "natives"
 }

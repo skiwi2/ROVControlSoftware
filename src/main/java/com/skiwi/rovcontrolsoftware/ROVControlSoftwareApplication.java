@@ -4,6 +4,7 @@ import com.github.sarxos.webcam.Webcam;
 import com.github.sarxos.webcam.ds.ipcam.IpCamDriver;
 import com.skiwi.rovcontrolsoftware.controllers.MainWindowController;
 import javafx.application.Application;
+import javafx.application.Platform;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
@@ -35,6 +36,11 @@ public class ROVControlSoftwareApplication extends Application {
         primaryStage.setScene(scene);
         primaryStage.setWidth(800);
         primaryStage.setHeight(800);
+        primaryStage.setOnCloseRequest(windowEvent -> {
+            Platform.exit();
+            //TODO fix hack
+            System.exit(0);
+        });
         primaryStage.show();
     }
 }
