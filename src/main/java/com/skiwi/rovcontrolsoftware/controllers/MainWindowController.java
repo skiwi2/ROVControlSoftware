@@ -34,7 +34,7 @@ import java.util.stream.Collectors;
  */
 public class MainWindowController implements Initializable {
     private static final int POLL_RATE = 100;   //amount of times polled per second
-    private static final int CONTROLLER_DELTA = 100;
+    private static final int CONTROLLER_DELTA = 500;
     private static final int KEYBOARD_DELTA = 5;
 
     private static final float CONTROLLER_DEADZONE = 0.25f;
@@ -114,10 +114,10 @@ public class MainWindowController implements Initializable {
         socketHostTextField.textProperty().addListener((observableValue, oldValue, newValue) -> Platform.runLater(this::updateSocketConnection));
         socketPortTextField.textProperty().addListener((observableValue, oldValue, newValue) -> Platform.runLater(this::updateSocketConnection));
 
-        cameraUrlTextField.setText("http://195.235.198.107:3346/axis-cgi/mjpg/video.cgi");
-//        cameraUrlTextField.setText("http://192.168.1.1:8080/?action=stream");
-        socketHostTextField.setText("127.0.0.1");
-//        socketHostTextField.setText("192.168.1.1");
+//        cameraUrlTextField.setText("http://195.235.198.107:3346/axis-cgi/mjpg/video.cgi");
+        cameraUrlTextField.setText("http://192.168.1.1:8080/?action=stream");
+//        socketHostTextField.setText("127.0.0.1");
+        socketHostTextField.setText("192.168.1.1");
         socketPortTextField.setText("2001");
         setXAngle(90f);
         setYAngle(90f);
@@ -154,8 +154,8 @@ public class MainWindowController implements Initializable {
                         rightThumbstickXValue *= ((magnitude - CONTROLLER_DEADZONE) / (1f - CONTROLLER_DEADZONE));
                         rightThumbstickYValue *= ((magnitude - CONTROLLER_DEADZONE) / (1f - CONTROLLER_DEADZONE));
 
-                        setXAngle(clamp(xAngle + (rightThumbstickXValue * CONTROLLER_DELTA / POLL_RATE), 0f, 180f));
-                        setYAngle(clamp(yAngle + (-rightThumbstickYValue * CONTROLLER_DELTA / POLL_RATE), 0f, 180f));
+                        setXAngle(clamp(xAngle - (rightThumbstickXValue * CONTROLLER_DELTA / POLL_RATE), 0f, 180f));
+                        setYAngle(clamp(yAngle - (-rightThumbstickYValue * CONTROLLER_DELTA / POLL_RATE), 0f, 180f));
                     }
                 }
             };
