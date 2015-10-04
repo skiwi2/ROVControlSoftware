@@ -12,9 +12,11 @@ import javafx.embed.swing.SwingNode;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
 import javafx.scene.Scene;
+import javafx.scene.control.ChoiceBox;
 import javafx.scene.control.Label;
 import javafx.scene.control.TextField;
 import javafx.scene.input.KeyEvent;
+import javafx.util.StringConverter;
 import net.java.games.input.Component;
 import net.java.games.input.Controller;
 import net.java.games.input.ControllerEnvironment;
@@ -46,6 +48,9 @@ public class MainWindowController implements Initializable {
 
     @FXML
     private SwingNode swingNode;
+
+    @FXML
+    private ChoiceBox<Configuration> configurationChoiceBox;
 
     @FXML
     private TextField cameraUrlTextField;
@@ -119,11 +124,6 @@ public class MainWindowController implements Initializable {
         socketHostTextField.textProperty().addListener((observableValue, oldValue, newValue) -> Platform.runLater(this::updateSocketConnection));
         socketPortTextField.textProperty().addListener((observableValue, oldValue, newValue) -> Platform.runLater(this::updateSocketConnection));
 
-//        cameraUrlTextField.setText("http://195.235.198.107:3346/axis-cgi/mjpg/video.cgi");
-        cameraUrlTextField.setText("http://192.168.1.1:8080/?action=stream");
-//        socketHostTextField.setText("127.0.0.1");
-        socketHostTextField.setText("192.168.1.1");
-        socketPortTextField.setText("2001");
         setXAngle(90f);
         setYAngle(90f);
 
@@ -169,6 +169,19 @@ public class MainWindowController implements Initializable {
         else {
             setGamepadStatus(Status.OFFLINE);
         }
+
+        configurationChoiceBox.getItems().addAll(
+                new Configuration("Test", "http://195.235.198.107:3346/axis-cgi/mjpg/video.cgi", "127.0.0.1", "2001"),
+                new Configuration("Ethernet", "http://192.168.1.1:8080/?action=stream", "192.168.1.1", "2001"),
+                new Configuration("WiFi", "http://192.168.50.122:8080/?action=stream", "192.168.50.122", "2001")
+        );
+        configurationChoiceBox.valueProperty().addListener((observableValue, oldValue, newValue) -> {
+            System.out.println("newValue = " + newValue);
+            cameraUrlTextField.setText(newValue.cameraUrl);
+            socketHostTextField.setText(newValue.socketHost);
+            socketPortTextField.setText(newValue.socketPort);
+        });
+        configurationChoiceBox.setValue(configurationChoiceBox.getItems().get(0));
     }
 
     private void updateSocketConnection() {
@@ -299,5 +312,24 @@ public class MainWindowController implements Initializable {
     private static enum Status {
         ONLINE,
         OFFLINE
+    }
+
+    private static class Configuration {
+        private String name;
+        private String cameraUrl;
+        private String socketHost;
+        private String socketPort;
+
+        private Configuration(String name, String cameraUrl, String socketHost, String socketPort) {
+            this.name = name;
+            this.cameraUrl = cameraUrl;
+            this.socketHost = socketHost;
+            this.socketPort = socketPort;
+        }
+
+        @Override
+        public String toString() {
+            return name;
+        }
     }
 }
