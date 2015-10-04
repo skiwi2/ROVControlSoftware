@@ -16,7 +16,6 @@ import javafx.scene.control.ChoiceBox;
 import javafx.scene.control.Label;
 import javafx.scene.control.TextField;
 import javafx.scene.input.KeyEvent;
-import javafx.util.StringConverter;
 import net.java.games.input.Component;
 import net.java.games.input.Controller;
 import net.java.games.input.ControllerEnvironment;
@@ -92,37 +91,42 @@ public class MainWindowController implements Initializable {
         cameraUrlTextField.textProperty().addListener((observableValue, oldValue, newValue) -> {
             try {
                 IpCamDevice ipCamDevice = IpCamDeviceRegistry.register(new IpCamDevice("Test " + new Random().nextInt(), cameraUrlTextField.getText(), IpCamMode.PUSH));
-                setCameraStatus(ipCamDevice.isOnline() ? Status.ONLINE : Status.OFFLINE);
-                if (ipCamDevice.isOnline()) {
-                    List<Webcam> webcams = Webcam.getWebcams();
-                    Webcam addedWebcam = webcams.get(webcams.size() - 1);
-                    addedWebcam.addWebcamListener(new WebcamListener() {
-                        @Override
-                        public void webcamOpen(WebcamEvent we) {
-                            Platform.runLater(() -> swingNode.setContent(new WebcamPanel(we.getSource())));
-                        }
+                Runnable cameraOnlineRunnable = () -> {
+                    setCameraStatus(Status.CONNECTING);
+                    boolean cameraOnline = ipCamDevice.isOnline();
+                    setCameraStatus(cameraOnline ? Status.ONLINE : Status.OFFLINE);
+                    if (cameraOnline) {
+                        List<Webcam> webcams = Webcam.getWebcams();
+                        Webcam addedWebcam = webcams.get(webcams.size() - 1);
+                        addedWebcam.addWebcamListener(new WebcamListener() {
+                            @Override
+                            public void webcamOpen(WebcamEvent we) {
+                                Platform.runLater(() -> swingNode.setContent(new WebcamPanel(we.getSource())));
+                            }
 
-                        @Override
-                        public void webcamClosed(WebcamEvent we) {
-                        }
+                            @Override
+                            public void webcamClosed(WebcamEvent we) {
+                            }
 
-                        @Override
-                        public void webcamDisposed(WebcamEvent we) {
-                        }
+                            @Override
+                            public void webcamDisposed(WebcamEvent we) {
+                            }
 
-                        @Override
-                        public void webcamImageObtained(WebcamEvent we) {
-                        }
-                    });
-                    addedWebcam.open(false);
-                }
+                            @Override
+                            public void webcamImageObtained(WebcamEvent we) {
+                            }
+                        });
+                        addedWebcam.open(false);
+                    }
+                };
+                new Thread(cameraOnlineRunnable).start();
             } catch (MalformedURLException e) {
                 e.printStackTrace();
             }
         });
 
-        socketHostTextField.textProperty().addListener((observableValue, oldValue, newValue) -> Platform.runLater(this::updateSocketConnection));
-        socketPortTextField.textProperty().addListener((observableValue, oldValue, newValue) -> Platform.runLater(this::updateSocketConnection));
+        socketHostTextField.textProperty().addListener((observableValue, oldValue, newValue) -> new Thread(this::updateSocketConnection).start());
+        socketPortTextField.textProperty().addListener((observableValue, oldValue, newValue) -> new Thread(this::updateSocketConnection).start());
 
         setXAngle(90f);
         setYAngle(90f);
@@ -176,7 +180,6 @@ public class MainWindowController implements Initializable {
                 new Configuration("WiFi", "http://192.168.50.122:8080/?action=stream", "192.168.50.122", "2001")
         );
         configurationChoiceBox.valueProperty().addListener((observableValue, oldValue, newValue) -> {
-            System.out.println("newValue = " + newValue);
             cameraUrlTextField.setText(newValue.cameraUrl);
             socketHostTextField.setText(newValue.socketHost);
             socketPortTextField.setText(newValue.socketPort);
@@ -188,6 +191,7 @@ public class MainWindowController implements Initializable {
         String host = socketHostTextField.getText();
         String port = socketPortTextField.getText();
 
+        setSocketStatus(Status.CONNECTING);
         try {
             if (commandSocket != null) {
                 commandSocket.close();
@@ -235,10 +239,13 @@ public class MainWindowController implements Initializable {
             case OFFLINE:
                 text = "Camera offline";
                 break;
+            case CONNECTING:
+                text = "Camera connecting...";
+                break;
             default:
                 text = "";
         }
-        cameraStatusLabel.setText(text);
+        Platform.runLater(() -> cameraStatusLabel.setText(text));
     }
 
     private void setSocketStatus(Status status) {
@@ -250,10 +257,13 @@ public class MainWindowController implements Initializable {
             case OFFLINE:
                 text = "Socket offline";
                 break;
+            case CONNECTING:
+                text = "Socket connecting...";
+                break;
             default:
                 text = "";
         }
-        socketStatusLabel.setText(text);
+        Platform.runLater(() -> socketStatusLabel.setText(text));
     }
 
     private void setGamepadStatus(Status status) {
@@ -265,10 +275,13 @@ public class MainWindowController implements Initializable {
             case OFFLINE:
                 text = "Gamepad offline";
                 break;
+            case CONNECTING:
+                text = "Gamepad connecting...";
+                break;
             default:
                 text = "";
         }
-        gamepadStatusLabel.setText(text);
+        Platform.runLater(() -> gamepadStatusLabel.setText(text));
     }
 
     private static float clamp(float value, float min, float max) {
@@ -311,7 +324,8 @@ public class MainWindowController implements Initializable {
 
     private static enum Status {
         ONLINE,
-        OFFLINE
+        OFFLINE,
+        CONNECTING
     }
 
     private static class Configuration {
