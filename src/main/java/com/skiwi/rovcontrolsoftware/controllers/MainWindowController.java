@@ -39,6 +39,11 @@ public class MainWindowController implements Initializable {
 
     private static final float CONTROLLER_DEADZONE = 0.25f;
 
+    private static final int CX_MIN = 10;
+    private static final int CX_MAX = 170;
+    private static final int CY_MIN = 0;
+    private static final int CY_MAX = 180;
+
     @FXML
     private SwingNode swingNode;
 
@@ -154,8 +159,8 @@ public class MainWindowController implements Initializable {
                         rightThumbstickXValue *= ((magnitude - CONTROLLER_DEADZONE) / (1f - CONTROLLER_DEADZONE));
                         rightThumbstickYValue *= ((magnitude - CONTROLLER_DEADZONE) / (1f - CONTROLLER_DEADZONE));
 
-                        setXAngle(clamp(xAngle - (rightThumbstickXValue * CONTROLLER_DELTA / POLL_RATE), 0f, 180f));
-                        setYAngle(clamp(yAngle - (-rightThumbstickYValue * CONTROLLER_DELTA / POLL_RATE), 0f, 180f));
+                        setXAngle(clamp(xAngle + (rightThumbstickXValue * CONTROLLER_DELTA / POLL_RATE), CX_MIN, CX_MAX));
+                        setYAngle(clamp(yAngle + (-rightThumbstickYValue * CONTROLLER_DELTA / POLL_RATE), CY_MIN, CY_MAX));
                     }
                 }
             };
@@ -271,19 +276,19 @@ public class MainWindowController implements Initializable {
             switch (keyEventHandler.getCode()) {
                 case W:
                     newAngle = yAngle + KEYBOARD_DELTA;
-                    setYAngle(clamp(newAngle, 0f , 180f));
+                    setYAngle(clamp(newAngle, CY_MIN , CY_MAX));
                     break;
                 case S:
                     newAngle = yAngle - KEYBOARD_DELTA;
-                    setYAngle(clamp(newAngle, 0f , 180f));
+                    setYAngle(clamp(newAngle, CY_MIN , CY_MAX));
                     break;
                 case D:
                     newAngle = xAngle + KEYBOARD_DELTA;
-                    setXAngle(clamp(newAngle, 0f , 180f));
+                    setXAngle(clamp(newAngle, CX_MIN , CX_MAX));
                     break;
                 case A:
                     newAngle = xAngle - KEYBOARD_DELTA;
-                    setXAngle(clamp(newAngle, 0f , 180f));
+                    setXAngle(clamp(newAngle, CX_MIN, CX_MAX));
                     break;
                 default:
                     break;
