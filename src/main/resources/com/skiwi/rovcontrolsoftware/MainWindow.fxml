@@ -48,5 +48,25 @@
          </font>
       </Label>
       <ChoiceBox fx:id="configurationChoiceBox" layoutX="25.0" layoutY="13.0" prefWidth="150.0" AnchorPane.leftAnchor="25.0" AnchorPane.topAnchor="13.0" />
+      <Label layoutX="640.0" layoutY="701.0" text="Motor left:" AnchorPane.bottomAnchor="55.0" AnchorPane.leftAnchor="590.0">
+         <font>
+            <Font size="24.0" />
+         </font>
+      </Label>
+      <Label layoutX="640.0" layoutY="734.0" text="Motor right:" AnchorPane.bottomAnchor="25.0" AnchorPane.leftAnchor="590.0">
+         <font>
+            <Font size="24.0" />
+         </font>
+      </Label>
+      <Label fx:id="motorLeftLabel" layoutX="724.0" layoutY="710.0" text="placeholder" AnchorPane.bottomAnchor="55.0" AnchorPane.leftAnchor="724.0">
+         <font>
+            <Font size="24.0" />
+         </font>
+      </Label>
+      <Label fx:id="motorRightLabel" layoutX="724.0" layoutY="740.0" text="placeholder" AnchorPane.bottomAnchor="25.0" AnchorPane.leftAnchor="724.0">
+         <font>
+            <Font size="24.0" />
+         </font>
+      </Label>
    </children>
 </AnchorPane>

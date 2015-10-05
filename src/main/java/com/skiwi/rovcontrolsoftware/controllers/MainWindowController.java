@@ -38,7 +38,9 @@ public class MainWindowController implements Initializable {
     private static final int CONTROLLER_DELTA = 500;
     private static final int KEYBOARD_DELTA = 5;
 
-    private static final float CONTROLLER_DEADZONE = 0.25f;
+    private static final float CONTROLLER_RS_DEADZONE = 0.25f;
+    private static final float CONTROLLER_TRIGGER_DEADZONE = 0.10f;
+    private static final float CONTROLLER_LS_DEADZONE = 0.25f;
 
     private static final int CX_MIN = 10;
     private static final int CX_MAX = 170;
@@ -75,10 +77,21 @@ public class MainWindowController implements Initializable {
     @FXML
     private Label gamepadStatusLabel;
 
+    @FXML
+    private Label motorLeftLabel;
+
+    @FXML
+    private Label motorRightLabel;
+
     private Scene scene;
 
     private float xAngle;
     private float yAngle;
+
+    private float motorThrottle;
+
+    private float motorLeftModifier;
+    private float motorRightModifier;
 
     private Socket commandSocket;
     private PrintWriter outCommandSocket;
@@ -131,6 +144,8 @@ public class MainWindowController implements Initializable {
         setXAngle(90f);
         setYAngle(90f);
 
+        setMotors(0f, 1f, 1f);
+
         List<Controller> gamepads = Arrays.stream(ControllerEnvironment.getDefaultEnvironment().getControllers())
                 .filter(controller -> controller.getType().equals(Controller.Type.GAMEPAD))
                 .collect(Collectors.toList());
@@ -142,6 +157,12 @@ public class MainWindowController implements Initializable {
             Component rightThumbstickX = controller.getComponent(Component.Identifier.Axis.RX);
             Component rightThumbstickY = controller.getComponent(Component.Identifier.Axis.RY);
 
+            Component leftThumbstickX = controller.getComponent(Component.Identifier.Axis.X);
+            Component leftThumbstickY = controller.getComponent(Component.Identifier.Axis.Y);
+
+            //Triggers
+            Component trigger = controller.getComponent(Component.Identifier.Axis.Z);
+
             Timer timer = new Timer(true);
             TimerTask timerTask = new TimerTask() {
                 @Override
@@ -150,22 +171,62 @@ public class MainWindowController implements Initializable {
                     float rightThumbstickXValue = rightThumbstickX.getPollData();
                     float rightThumbstickYValue = rightThumbstickY.getPollData();
 
-                    float magnitude = (float)Math.sqrt(Math.pow(rightThumbstickXValue, 2) + Math.pow(rightThumbstickYValue, 2));
-                    if (magnitude < CONTROLLER_DEADZONE) {
+                    float rightThumbstickMagnitude = (float)Math.sqrt(Math.pow(rightThumbstickXValue, 2) + Math.pow(rightThumbstickYValue, 2));
+                    if (rightThumbstickMagnitude < CONTROLLER_RS_DEADZONE) {
                         //do nothing
                     }
                     else {
                         //normalize
-                        rightThumbstickXValue /= magnitude;
-                        rightThumbstickYValue /= magnitude;
+                        rightThumbstickXValue /= rightThumbstickMagnitude;
+                        rightThumbstickYValue /= rightThumbstickMagnitude;
 
                         //scaling
-                        rightThumbstickXValue *= ((magnitude - CONTROLLER_DEADZONE) / (1f - CONTROLLER_DEADZONE));
-                        rightThumbstickYValue *= ((magnitude - CONTROLLER_DEADZONE) / (1f - CONTROLLER_DEADZONE));
+                        rightThumbstickXValue *= ((rightThumbstickMagnitude - CONTROLLER_RS_DEADZONE) / (1f - CONTROLLER_RS_DEADZONE));
+                        rightThumbstickYValue *= ((rightThumbstickMagnitude - CONTROLLER_RS_DEADZONE) / (1f - CONTROLLER_RS_DEADZONE));
 
                         setXAngle(clamp(xAngle + (rightThumbstickXValue * CONTROLLER_DELTA / POLL_RATE), CX_MIN, CX_MAX));
                         setYAngle(clamp(yAngle + (-rightThumbstickYValue * CONTROLLER_DELTA / POLL_RATE), CY_MIN, CY_MAX));
                     }
+
+                    float triggerValue = trigger.getPollData();
+                    if (Math.abs(triggerValue) < CONTROLLER_TRIGGER_DEADZONE) {
+                        triggerValue = 0f;
+                    }
+                    else {
+                        //scaling
+                        triggerValue *= ((Math.abs(triggerValue) - CONTROLLER_TRIGGER_DEADZONE) / (1f - CONTROLLER_TRIGGER_DEADZONE));
+                        triggerValue *= -1; //pushing right trigger accelerates, left trigger decelerates
+                    }
+
+                    float leftThumbstickXValue = leftThumbstickX.getPollData();
+                    float leftThumbstickYValue = leftThumbstickY.getPollData();
+
+                    float leftModifier;
+                    float rightModifier;
+
+                    float leftThumbstickMagnitude = (float)Math.sqrt(Math.pow(leftThumbstickXValue, 2) + Math.pow(leftThumbstickYValue, 2));
+                    if (leftThumbstickMagnitude < CONTROLLER_LS_DEADZONE) {
+                        leftModifier = 1f;
+                        rightModifier = 1f;
+                    }
+                    else {
+                        //normalize
+                        leftThumbstickXValue /= leftThumbstickMagnitude;
+
+                        //scaling
+                        leftThumbstickXValue *= ((leftThumbstickMagnitude - CONTROLLER_LS_DEADZONE) / (1f - CONTROLLER_LS_DEADZONE));
+
+                        if (leftThumbstickXValue >= 0f) {
+                            leftModifier = 1f;
+                            rightModifier = 1f - 2 * leftThumbstickXValue;
+                        }
+                        else {
+                            leftModifier = 1f + 2 * leftThumbstickXValue;
+                            rightModifier = 1f;
+                        }
+                    }
+
+                    setMotors(triggerValue, leftModifier, rightModifier);
                 }
             };
             timer.scheduleAtFixedRate(timerTask, 0, 1000 / POLL_RATE);
@@ -219,6 +280,21 @@ public class MainWindowController implements Initializable {
         yAngle = angle;
         Platform.runLater(() -> yAngleLabel.setText(String.valueOf(Math.round(angle))));
         sendCommand("y " + Math.round(angle));
+    }
+
+    private void setMotors(float throttle, float leftModifier, float rightModifier) {
+        motorThrottle = throttle;
+        motorLeftModifier = leftModifier;
+        motorRightModifier = rightModifier;
+
+        float motorLeft = motorThrottle * motorLeftModifier;
+        float motorRight = motorThrottle * motorRightModifier;
+
+        Platform.runLater(() -> motorLeftLabel.setText(String.valueOf(Math.round(100 * motorLeft))));
+        Platform.runLater(() -> motorRightLabel.setText(String.valueOf(Math.round(100 * motorRight))));
+
+        sendCommand("ml " + Math.round(10000 * motorLeft));
+        sendCommand("mr " + Math.round(10000 * motorRight));
     }
 
     private void sendCommand(String command) {
