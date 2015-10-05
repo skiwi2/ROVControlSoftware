@@ -273,13 +273,13 @@ public class MainWindowController implements Initializable {
     private void setXAngle(float angle) {
         xAngle = angle;
         Platform.runLater(() -> xAngleLabel.setText(String.valueOf(Math.round(angle))));
-        sendCommand("x " + Math.round(angle));
+        sendCommand("cx " + Math.round(angle));
     }
 
     private void setYAngle(float angle) {
         yAngle = angle;
         Platform.runLater(() -> yAngleLabel.setText(String.valueOf(Math.round(angle))));
-        sendCommand("y " + Math.round(angle));
+        sendCommand("cy " + Math.round(angle));
     }
 
     private void setMotors(float throttle, float leftModifier, float rightModifier) {
