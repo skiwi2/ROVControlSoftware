@@ -7,6 +7,8 @@ import com.github.sarxos.webcam.WebcamPanel;
 import com.github.sarxos.webcam.ds.ipcam.IpCamDevice;
 import com.github.sarxos.webcam.ds.ipcam.IpCamDeviceRegistry;
 import com.github.sarxos.webcam.ds.ipcam.IpCamMode;
+import com.skiwi.rovcontrolsoftware.gamepads.XboxGamepad;
+import com.skiwi.rovcontrolsoftware.gamepads.events.AxisMovedEvent;
 import javafx.application.Platform;
 import javafx.embed.swing.SwingNode;
 import javafx.fxml.FXML;
@@ -16,7 +18,6 @@ import javafx.scene.control.ChoiceBox;
 import javafx.scene.control.Label;
 import javafx.scene.control.TextField;
 import javafx.scene.input.KeyEvent;
-import net.java.games.input.Component;
 import net.java.games.input.Controller;
 import net.java.games.input.ControllerEnvironment;
 
@@ -85,6 +86,9 @@ public class MainWindowController implements Initializable {
 
     private Scene scene;
 
+    private float rightStickXValue = 0f;
+    private float rightStickYValue = 0f;
+
     private float xAngle;
     private float yAngle;
 
@@ -144,7 +148,10 @@ public class MainWindowController implements Initializable {
         setXAngle(90f);
         setYAngle(90f);
 
-        setMotors(0f, 1f, 1f);
+        motorThrottle = 0f;
+        motorLeftModifier = 1f;
+        motorRightModifier = 1f;
+        updateMotors();
 
         List<Controller> gamepads = Arrays.stream(ControllerEnvironment.getDefaultEnvironment().getControllers())
                 .filter(controller -> controller.getType().equals(Controller.Type.GAMEPAD))
@@ -153,83 +160,46 @@ public class MainWindowController implements Initializable {
             setGamepadStatus(Status.ONLINE);
             Controller controller = gamepads.get(0);
 
-            //Right thumbstick
-            Component rightThumbstickX = controller.getComponent(Component.Identifier.Axis.RX);
-            Component rightThumbstickY = controller.getComponent(Component.Identifier.Axis.RY);
+            XboxGamepad xboxGamepad = new XboxGamepad(controller, 1000 / POLL_RATE);
 
-            Component leftThumbstickX = controller.getComponent(Component.Identifier.Axis.X);
-            Component leftThumbstickY = controller.getComponent(Component.Identifier.Axis.Y);
+            xboxGamepad.setDeadzone(XboxGamepad.Component.LEFT_STICK_X_AXIS, XboxGamepad.DeadzoneType.RADIAL, CONTROLLER_LS_DEADZONE);
+            xboxGamepad.setDeadzone(XboxGamepad.Component.LEFT_STICK_Y_AXIS, XboxGamepad.DeadzoneType.RADIAL, CONTROLLER_LS_DEADZONE);
 
-            //Triggers
-            Component trigger = controller.getComponent(Component.Identifier.Axis.Z);
+            xboxGamepad.setDeadzone(XboxGamepad.Component.RIGHT_STICK_X_AXIS, XboxGamepad.DeadzoneType.RADIAL, CONTROLLER_RS_DEADZONE);
+            xboxGamepad.setDeadzone(XboxGamepad.Component.RIGHT_STICK_Y_AXIS, XboxGamepad.DeadzoneType.RADIAL, CONTROLLER_RS_DEADZONE);
+
+            xboxGamepad.setDeadzone(XboxGamepad.Component.TRIGGER_AXIS, XboxGamepad.DeadzoneType.LINEAR, CONTROLLER_TRIGGER_DEADZONE);
+
+            xboxGamepad.addListener(XboxGamepad.Component.RIGHT_STICK_X_AXIS, AxisMovedEvent.class, event -> rightStickXValue = event.getNewValue());
+            xboxGamepad.addListener(XboxGamepad.Component.RIGHT_STICK_Y_AXIS, AxisMovedEvent.class, event -> rightStickYValue = event.getNewValue());
+
+            xboxGamepad.addListener(XboxGamepad.Component.TRIGGER_AXIS, AxisMovedEvent.class, event -> {
+                motorThrottle = -event.getNewValue();
+                updateMotors();
+            });
+            xboxGamepad.addListener(XboxGamepad.Component.LEFT_STICK_X_AXIS, AxisMovedEvent.class, event -> {
+                float value = event.getNewValue();
+                if (value >= 0f) {
+                    motorLeftModifier = 1f;
+                    motorRightModifier = 1f - 2 * value;
+                }
+                else {
+                    motorLeftModifier = 1f + 2 * value;
+                    motorRightModifier = 1f;
+                }
+                updateMotors();
+            });
+
+            xboxGamepad.startListening();
 
             Timer timer = new Timer(true);
-            TimerTask timerTask = new TimerTask() {
+            timer.scheduleAtFixedRate(new TimerTask() {
                 @Override
                 public void run() {
-                    controller.poll();
-                    float rightThumbstickXValue = rightThumbstickX.getPollData();
-                    float rightThumbstickYValue = rightThumbstickY.getPollData();
-
-                    float rightThumbstickMagnitude = (float)Math.sqrt(Math.pow(rightThumbstickXValue, 2) + Math.pow(rightThumbstickYValue, 2));
-                    if (rightThumbstickMagnitude < CONTROLLER_RS_DEADZONE) {
-                        //do nothing
-                    }
-                    else {
-                        //normalize
-                        rightThumbstickXValue /= rightThumbstickMagnitude;
-                        rightThumbstickYValue /= rightThumbstickMagnitude;
-
-                        //scaling
-                        rightThumbstickXValue *= ((rightThumbstickMagnitude - CONTROLLER_RS_DEADZONE) / (1f - CONTROLLER_RS_DEADZONE));
-                        rightThumbstickYValue *= ((rightThumbstickMagnitude - CONTROLLER_RS_DEADZONE) / (1f - CONTROLLER_RS_DEADZONE));
-
-                        setXAngle(clamp(xAngle + (rightThumbstickXValue * CONTROLLER_DELTA / POLL_RATE), CX_MIN, CX_MAX));
-                        setYAngle(clamp(yAngle + (-rightThumbstickYValue * CONTROLLER_DELTA / POLL_RATE), CY_MIN, CY_MAX));
-                    }
-
-                    float triggerValue = trigger.getPollData();
-                    if (Math.abs(triggerValue) < CONTROLLER_TRIGGER_DEADZONE) {
-                        triggerValue = 0f;
-                    }
-                    else {
-                        //scaling
-                        triggerValue *= ((Math.abs(triggerValue) - CONTROLLER_TRIGGER_DEADZONE) / (1f - CONTROLLER_TRIGGER_DEADZONE));
-                        triggerValue *= -1; //pushing right trigger accelerates, left trigger decelerates
-                    }
-
-                    float leftThumbstickXValue = leftThumbstickX.getPollData();
-                    float leftThumbstickYValue = leftThumbstickY.getPollData();
-
-                    float leftModifier;
-                    float rightModifier;
-
-                    float leftThumbstickMagnitude = (float)Math.sqrt(Math.pow(leftThumbstickXValue, 2) + Math.pow(leftThumbstickYValue, 2));
-                    if (leftThumbstickMagnitude < CONTROLLER_LS_DEADZONE) {
-                        leftModifier = 1f;
-                        rightModifier = 1f;
-                    }
-                    else {
-                        //normalize
-                        leftThumbstickXValue /= leftThumbstickMagnitude;
-
-                        //scaling
-                        leftThumbstickXValue *= ((leftThumbstickMagnitude - CONTROLLER_LS_DEADZONE) / (1f - CONTROLLER_LS_DEADZONE));
-
-                        if (leftThumbstickXValue >= 0f) {
-                            leftModifier = 1f;
-                            rightModifier = 1f - 2 * leftThumbstickXValue;
-                        }
-                        else {
-                            leftModifier = 1f + 2 * leftThumbstickXValue;
-                            rightModifier = 1f;
-                        }
-                    }
-
-                    setMotors(triggerValue, leftModifier, rightModifier);
+                    setXAngle(clamp(xAngle + (rightStickXValue * CONTROLLER_DELTA / POLL_RATE), CX_MIN, CX_MAX));
+                    setYAngle(clamp(yAngle - (rightStickYValue * CONTROLLER_DELTA / POLL_RATE), CY_MIN, CY_MAX));
                 }
-            };
-            timer.scheduleAtFixedRate(timerTask, 0, 1000 / POLL_RATE);
+            }, 0, 1000 / POLL_RATE);
         }
         else {
             setGamepadStatus(Status.OFFLINE);
@@ -282,11 +252,7 @@ public class MainWindowController implements Initializable {
         sendCommand("cy " + Math.round(angle));
     }
 
-    private void setMotors(float throttle, float leftModifier, float rightModifier) {
-        motorThrottle = throttle;
-        motorLeftModifier = leftModifier;
-        motorRightModifier = rightModifier;
-
+    private void updateMotors() {
         float motorLeft = motorThrottle * motorLeftModifier;
         float motorRight = motorThrottle * motorRightModifier;
 
