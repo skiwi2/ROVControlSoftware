@@ -208,7 +208,7 @@ public class MainWindowController implements Initializable {
                     setXAngle(clamp(xAngle + (rightStickXValue * CONTROLLER_DELTA / POLL_RATE), CX_MIN, CX_MAX));
                     setYAngle(clamp(yAngle - (rightStickYValue * CONTROLLER_DELTA / POLL_RATE), CY_MIN, CY_MAX));
                 }
-            }, 0, 1000 / POLL_RATE);
+            }, 0, 1000 / (POLL_RATE / 10));
         }
         else {
             setGamepadStatus(Status.OFFLINE);
