@@ -9,6 +9,7 @@ import com.github.sarxos.webcam.ds.ipcam.IpCamDeviceRegistry;
 import com.github.sarxos.webcam.ds.ipcam.IpCamMode;
 import com.skiwi.rovcontrolsoftware.gamepads.XboxGamepad;
 import com.skiwi.rovcontrolsoftware.gamepads.events.AxisMovedEvent;
+import com.skiwi.rovcontrolsoftware.gamepads.events.ButtonPressedEvent;
 import javafx.application.Platform;
 import javafx.embed.swing.SwingNode;
 import javafx.fxml.FXML;
@@ -42,6 +43,9 @@ public class MainWindowController implements Initializable {
     private static final float CONTROLLER_RS_DEADZONE = 0.25f;
     private static final float CONTROLLER_TRIGGER_DEADZONE = 0.10f;
     private static final float CONTROLLER_LS_DEADZONE = 0.25f;
+
+    private static final float CX_DEFAULT = 90f;
+    private static final float CY_DEFAULT = 90f;
 
     private static final int CX_MIN = 10;
     private static final int CX_MAX = 170;
@@ -145,8 +149,8 @@ public class MainWindowController implements Initializable {
         socketHostTextField.textProperty().addListener((observableValue, oldValue, newValue) -> new Thread(this::updateSocketConnection).start());
         socketPortTextField.textProperty().addListener((observableValue, oldValue, newValue) -> new Thread(this::updateSocketConnection).start());
 
-        setXAngle(90f);
-        setYAngle(90f);
+        setXAngle(CX_DEFAULT);
+        setYAngle(CY_DEFAULT);
 
         motorThrottle = 0f;
         motorLeftModifier = 1f;
@@ -172,6 +176,11 @@ public class MainWindowController implements Initializable {
 
             xboxGamepad.addListener(XboxGamepad.Component.RIGHT_STICK_X_AXIS, AxisMovedEvent.class, event -> rightStickXValue = event.getNewValue());
             xboxGamepad.addListener(XboxGamepad.Component.RIGHT_STICK_Y_AXIS, AxisMovedEvent.class, event -> rightStickYValue = event.getNewValue());
+
+            xboxGamepad.addListener(XboxGamepad.Component.RIGHT_STICK_BUTTON, ButtonPressedEvent.class, event -> {
+                setXAngle(CX_DEFAULT);
+                setYAngle(CY_DEFAULT);
+            });
 
             xboxGamepad.addListener(XboxGamepad.Component.TRIGGER_AXIS, AxisMovedEvent.class, event -> {
                 motorThrottle = -event.getNewValue();
