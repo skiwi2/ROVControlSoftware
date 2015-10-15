@@ -9,22 +9,22 @@
 <AnchorPane maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="800.0" prefWidth="800.0" xmlns="http://javafx.com/javafx/8" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.skiwi.rovcontrolsoftware.controllers.MainWindowController">
    <children>
       <SwingNode fx:id="swingNode" AnchorPane.bottomAnchor="100.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="150.0" />
-      <Label layoutX="640.0" layoutY="25.0" text="X angle: " AnchorPane.leftAnchor="640.0" AnchorPane.topAnchor="25.0">
+      <Label layoutX="640.0" layoutY="25.0" text="CX angle: " AnchorPane.leftAnchor="625.0" AnchorPane.topAnchor="25.0">
          <font>
             <Font size="24.0" />
          </font>
       </Label>
-      <Label layoutX="650.0" layoutY="35.0" text="Y angle: " AnchorPane.leftAnchor="640.0" AnchorPane.topAnchor="55.0">
+      <Label layoutX="650.0" layoutY="35.0" text="CY angle: " AnchorPane.leftAnchor="625.0" AnchorPane.topAnchor="55.0">
          <font>
             <Font size="24.0" />
          </font>
       </Label>
-      <Label layoutX="731.0" layoutY="25.0" text="placeholder" AnchorPane.leftAnchor="731.0" AnchorPane.topAnchor="25.0" fx:id="xAngleLabel">
+      <Label fx:id="cxAngleLabel" layoutX="731.0" layoutY="25.0" text="placeholder" AnchorPane.leftAnchor="731.0" AnchorPane.topAnchor="25.0">
          <font>
             <Font size="24.0" />
          </font>
       </Label>
-      <Label fx:id="yAngleLabel" layoutX="731.0" layoutY="55.0" text="placeholder" AnchorPane.leftAnchor="731.0" AnchorPane.topAnchor="55.0">
+      <Label fx:id="cyAngleLabel" layoutX="731.0" layoutY="55.0" text="placeholder" AnchorPane.leftAnchor="731.0" AnchorPane.topAnchor="55.0">
          <font>
             <Font size="24.0" />
          </font>
@@ -64,6 +64,16 @@
          </font>
       </Label>
       <Label fx:id="motorRightLabel" layoutX="724.0" layoutY="740.0" text="placeholder" AnchorPane.bottomAnchor="25.0" AnchorPane.leftAnchor="724.0">
+         <font>
+            <Font size="24.0" />
+         </font>
+      </Label>
+      <Label layoutX="619.0" layoutY="96.0" text="SY angle: " AnchorPane.leftAnchor="625.0" AnchorPane.topAnchor="105.0">
+         <font>
+            <Font size="24.0" />
+         </font>
+      </Label>
+      <Label fx:id="syAngleLabel" layoutX="741.0" layoutY="65.0" text="placeholder" AnchorPane.leftAnchor="731.0" AnchorPane.topAnchor="105.0">
          <font>
             <Font size="24.0" />
          </font>

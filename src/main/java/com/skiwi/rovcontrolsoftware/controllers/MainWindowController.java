@@ -39,6 +39,7 @@ public class MainWindowController implements Initializable {
     private static final int POLL_RATE = 100;   //amount of times polled per second
     private static final int CONTROLLER_DELTA = 500;
     private static final int KEYBOARD_DELTA = 5;
+    private static final int SHOVEL_DELTA = 10;
 
     private static final float CONTROLLER_RS_DEADZONE = 0.25f;
     private static final float CONTROLLER_TRIGGER_DEADZONE = 0.10f;
@@ -46,11 +47,14 @@ public class MainWindowController implements Initializable {
 
     private static final float CX_DEFAULT = 90f;
     private static final float CY_DEFAULT = 90f;
+    private static final float SY_DEFAULT = 90f;
 
     private static final int CX_MIN = 10;
     private static final int CX_MAX = 170;
     private static final int CY_MIN = 0;
     private static final int CY_MAX = 180;
+    private static final int SY_MIN = 0;
+    private static final int SY_MAX = 180;
 
     @FXML
     private SwingNode swingNode;
@@ -68,10 +72,13 @@ public class MainWindowController implements Initializable {
     private TextField socketPortTextField;
 
     @FXML
-    private Label xAngleLabel;
+    private Label cxAngleLabel;
 
     @FXML
-    private Label yAngleLabel;
+    private Label cyAngleLabel;
+
+    @FXML
+    private Label syAngleLabel;
 
     @FXML
     private Label cameraStatusLabel;
@@ -93,8 +100,10 @@ public class MainWindowController implements Initializable {
     private float rightStickXValue = 0f;
     private float rightStickYValue = 0f;
 
-    private float xAngle;
-    private float yAngle;
+    private float cxAngle;
+    private float cyAngle;
+
+    private float syAngle;
 
     private float motorThrottle;
 
@@ -149,8 +158,9 @@ public class MainWindowController implements Initializable {
         socketHostTextField.textProperty().addListener((observableValue, oldValue, newValue) -> new Thread(this::updateSocketConnection).start());
         socketPortTextField.textProperty().addListener((observableValue, oldValue, newValue) -> new Thread(this::updateSocketConnection).start());
 
-        setXAngle(CX_DEFAULT);
-        setYAngle(CY_DEFAULT);
+        setCXAngle(CX_DEFAULT);
+        setCYAngle(CY_DEFAULT);
+        setSYAngle(SY_DEFAULT);
 
         motorThrottle = 0f;
         motorLeftModifier = 1f;
@@ -178,8 +188,15 @@ public class MainWindowController implements Initializable {
             xboxGamepad.addListener(XboxGamepad.Component.RIGHT_STICK_Y_AXIS, AxisMovedEvent.class, event -> rightStickYValue = event.getNewValue());
 
             xboxGamepad.addListener(XboxGamepad.Component.RIGHT_STICK_BUTTON, ButtonPressedEvent.class, event -> {
-                setXAngle(CX_DEFAULT);
-                setYAngle(CY_DEFAULT);
+                setCXAngle(CX_DEFAULT);
+                setCYAngle(CY_DEFAULT);
+            });
+
+            xboxGamepad.addListener(XboxGamepad.Component.A_BUTTON, ButtonPressedEvent.class, event -> {
+                setSYAngle(clamp(syAngle + SHOVEL_DELTA, SY_MIN, SY_MAX));
+            });
+            xboxGamepad.addListener(XboxGamepad.Component.X_BUTTON, ButtonPressedEvent.class, event -> {
+                setSYAngle(clamp(syAngle - SHOVEL_DELTA, SY_MIN, SY_MAX));
             });
 
             xboxGamepad.addListener(XboxGamepad.Component.TRIGGER_AXIS, AxisMovedEvent.class, event -> {
@@ -205,8 +222,8 @@ public class MainWindowController implements Initializable {
             timer.scheduleAtFixedRate(new TimerTask() {
                 @Override
                 public void run() {
-                    setXAngle(clamp(xAngle + (rightStickXValue * CONTROLLER_DELTA / POLL_RATE), CX_MIN, CX_MAX));
-                    setYAngle(clamp(yAngle - (rightStickYValue * CONTROLLER_DELTA / POLL_RATE), CY_MIN, CY_MAX));
+                    setCXAngle(clamp(cxAngle + (rightStickXValue * CONTROLLER_DELTA / POLL_RATE), CX_MIN, CX_MAX));
+                    setCYAngle(clamp(cyAngle - (rightStickYValue * CONTROLLER_DELTA / POLL_RATE), CY_MIN, CY_MAX));
                 }
             }, 0, 1000 / (POLL_RATE / 10));
         }
@@ -249,16 +266,22 @@ public class MainWindowController implements Initializable {
         }
     }
 
-    private void setXAngle(float angle) {
-        xAngle = angle;
-        Platform.runLater(() -> xAngleLabel.setText(String.valueOf(Math.round(angle))));
+    private void setCXAngle(float angle) {
+        cxAngle = angle;
+        Platform.runLater(() -> cxAngleLabel.setText(String.valueOf(Math.round(angle))));
         sendCommand("cx " + Math.round(angle));
     }
 
-    private void setYAngle(float angle) {
-        yAngle = angle;
-        Platform.runLater(() -> yAngleLabel.setText(String.valueOf(Math.round(angle))));
+    private void setCYAngle(float angle) {
+        cyAngle = angle;
+        Platform.runLater(() -> cyAngleLabel.setText(String.valueOf(Math.round(angle))));
         sendCommand("cy " + Math.round(angle));
+    }
+
+    private void setSYAngle(float angle) {
+        syAngle = angle;
+        Platform.runLater(() -> syAngleLabel.setText(String.valueOf(Math.round(angle))));
+        sendCommand("sy " + Math.round(angle));
     }
 
     private void updateMotors() {
@@ -352,20 +375,20 @@ public class MainWindowController implements Initializable {
             float newAngle;
             switch (keyEventHandler.getCode()) {
                 case W:
-                    newAngle = yAngle + KEYBOARD_DELTA;
-                    setYAngle(clamp(newAngle, CY_MIN , CY_MAX));
+                    newAngle = cyAngle + KEYBOARD_DELTA;
+                    setCYAngle(clamp(newAngle, CY_MIN, CY_MAX));
                     break;
                 case S:
-                    newAngle = yAngle - KEYBOARD_DELTA;
-                    setYAngle(clamp(newAngle, CY_MIN , CY_MAX));
+                    newAngle = cyAngle - KEYBOARD_DELTA;
+                    setCYAngle(clamp(newAngle, CY_MIN, CY_MAX));
                     break;
                 case D:
-                    newAngle = xAngle + KEYBOARD_DELTA;
-                    setXAngle(clamp(newAngle, CX_MIN , CX_MAX));
+                    newAngle = cxAngle + KEYBOARD_DELTA;
+                    setCXAngle(clamp(newAngle, CX_MIN, CX_MAX));
                     break;
                 case A:
-                    newAngle = xAngle - KEYBOARD_DELTA;
-                    setXAngle(clamp(newAngle, CX_MIN, CX_MAX));
+                    newAngle = cxAngle - KEYBOARD_DELTA;
+                    setCXAngle(clamp(newAngle, CX_MIN, CX_MAX));
                     break;
                 default:
                     break;
